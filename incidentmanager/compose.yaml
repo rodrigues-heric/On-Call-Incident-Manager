@@ -1,5 +1,19 @@
 services:
   redis:
-    image: 'redis:latest'
+    image: "redis:latest"
     ports:
-      - '6379'
+      - "6379"
+
+  postgres:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_DB: incidentmanager
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:
