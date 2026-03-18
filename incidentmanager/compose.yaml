@@ -1,5 +1,19 @@
 services:
   redis:
-    image: 'redis:latest'
+    image: "redis:latest"
     ports:
-      - '6379'
+      - ${REDIS_PORT}
+
+  postgres:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_DB: ${PGSQL_DB}
+      POSTGRES_USER: ${PGSQL_USER}
+      POSTGRES_PASSWORD: ${PGSQL_PASS}
+    ports:
+      - ${PGSQL_PORT}:${PGSQL_PORT}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:
