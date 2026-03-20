@@ -23,6 +23,7 @@ import com.rodrigues.heric.incidentmanager.domain.UsersEntity;
 import com.rodrigues.heric.incidentmanager.dto.CreateUsersRequest;
 import com.rodrigues.heric.incidentmanager.dto.UsersDTO;
 import com.rodrigues.heric.incidentmanager.exception.BusinessException;
+import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.mapper.UsersMapper;
 import com.rodrigues.heric.incidentmanager.repository.UsersRepository;
 import com.rodrigues.heric.incidentmanager.service.UsersService;
@@ -107,6 +108,22 @@ public class UsersServiceTests {
 
         verify(this.usersRepository, times(1)).findById(id);
         verify(this.usersMapper, times(1)).toDTO(userEntity);
+    }
+
+    @Test
+    @DisplayName("When the user does not exist the Users Service should throw Resource Not Found Exception")
+    public void whenUserDoesNotExist_thenUsersServiceShouldThrowResourceNotFoundException() {
+        UUID id = UUID.randomUUID();
+
+        when(this.usersRepository.findById(id)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            this.usersService.getUserById(id);
+        });
+
+        assertEquals("User with ID: " + id + " does not exist.", exception.getMessage());
+
+        verify(this.usersMapper, never()).toDTO(any());
     }
 
 }
