@@ -85,4 +85,28 @@ public class UsersServiceTests {
         verify(this.usersRepository, times(1)).save(userEntity);
     }
 
+    @Test
+    @DisplayName("When the user exists the Users Service should return their DTO")
+    public void shouldReturnUserDTO() {
+        String email = "foo.bar@example.com";
+        String name = "Foo Bar";
+        String phone = "1234567890";
+
+        UUID id = UUID.randomUUID();
+        UsersEntity userEntity = new UsersEntity();
+        UsersDTO expectedDTO = new UsersDTO(id, name, email, phone);
+
+        when(this.usersRepository.findById(id)).thenReturn(Optional.of(userEntity));
+        when(this.usersMapper.toDTO(userEntity)).thenReturn(expectedDTO);
+
+        UsersDTO result = this.usersService.getUserById(id);
+
+        assertNotNull(result);
+        assertEquals(expectedDTO.id(), result.id());
+        assertEquals(expectedDTO.email(), result.email());
+
+        verify(this.usersRepository, times(1)).findById(id);
+        verify(this.usersMapper, times(1)).toDTO(userEntity);
+    }
+
 }
