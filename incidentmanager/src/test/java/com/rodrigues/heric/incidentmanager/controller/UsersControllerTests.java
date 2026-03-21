@@ -3,7 +3,6 @@ package com.rodrigues.heric.incidentmanager.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.rodrigues.heric.incidentmanager.dto.CreateUsersRequest;
 import com.rodrigues.heric.incidentmanager.dto.UsersDTO;
+import com.rodrigues.heric.incidentmanager.exception.BusinessException;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.service.UsersService;
 
@@ -61,7 +61,12 @@ public class UsersControllerTests {
                 .thenThrow(new ResourceNotFoundException("User with ID: " + id + " does not exist."));
 
         this.mockMvc.perform(get("/users/{id}", id))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Resource Not Found"))
+                .andExpect(jsonPath("$.message").value("User with ID: " + id + " does not exist."))
+                .andExpect(jsonPath("$.path").value("/users/" + id))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
@@ -88,6 +93,32 @@ public class UsersControllerTests {
                 .andExpect(jsonPath("$.name").value(response.name()))
                 .andExpect(jsonPath("$.email").value(response.email()))
                 .andExpect(jsonPath("$.phone").value(response.phone()));
+    }
+
+    @Test
+    @DisplayName("Should return Business Logic Exception when creating user with already used email")
+    public void shouldReturnBusinessLogicExceptionWhenCreatingUserWithAlreadyUsedEmail() throws Exception {
+        String email = "foo.bar@example.com";
+        String name = "Foo Bar";
+        String phone = "1234567890";
+        String jsonStr = """
+                {
+                    "name": "%s",
+                    "email": "%s",
+                    "phone": "%s"
+                }
+                """.formatted(name, email, phone);
+        when(this.usersService.createUser(any(CreateUsersRequest.class)))
+                .thenThrow(new BusinessException("Email: " + email + " already in use."));
+
+        this.mockMvc.perform(post("/users")
+                .contentType(MediaType.APPLICATION_JSON).content(jsonStr))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Business Rule Violation"))
+                .andExpect(jsonPath("$.message").value("Email: " + email + " already in use."))
+                .andExpect(jsonPath("$.path").value("/users"))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
 }
