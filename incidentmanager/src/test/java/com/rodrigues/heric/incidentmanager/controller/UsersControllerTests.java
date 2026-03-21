@@ -121,4 +121,24 @@ public class UsersControllerTests {
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
+    @Test
+    @DisplayName("Shoudl return Bad Request when invalid data are send")
+    public void shouldReturnBadRequestWhenInvalidDataAreSend() throws Exception {
+        String invalidJson = """
+                {
+                    "name": "",
+                    "email": "invalid email",
+                    "phone": "FFF"
+                }
+                """;
+
+        this.mockMvc.perform(post("/users").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Validation Error"))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.path").value("/users"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
 }
