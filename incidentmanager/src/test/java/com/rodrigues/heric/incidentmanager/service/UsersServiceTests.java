@@ -1,4 +1,4 @@
-package service;
+package com.rodrigues.heric.incidentmanager.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,7 +26,6 @@ import com.rodrigues.heric.incidentmanager.exception.BusinessException;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.mapper.UsersMapper;
 import com.rodrigues.heric.incidentmanager.repository.UsersRepository;
-import com.rodrigues.heric.incidentmanager.service.UsersService;
 
 @ExtendWith(MockitoExtension.class)
 public class UsersServiceTests {
