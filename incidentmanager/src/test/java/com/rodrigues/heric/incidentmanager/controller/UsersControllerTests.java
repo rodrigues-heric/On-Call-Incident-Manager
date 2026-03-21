@@ -3,6 +3,7 @@ package com.rodrigues.heric.incidentmanager.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.rodrigues.heric.incidentmanager.dto.CreateUsersRequest;
 import com.rodrigues.heric.incidentmanager.dto.UsersDTO;
+import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.service.UsersService;
 
 @WebMvcTest(UsersController.class)
@@ -48,6 +50,18 @@ public class UsersControllerTests {
                 .andExpect(jsonPath("$.email").value(response.email()))
                 .andExpect(jsonPath("$.name").value(response.name()))
                 .andExpect(jsonPath("$.phone").value(response.phone()));
+    }
+
+    @Test
+    @DisplayName("Should return Resource Not Found Exception when getting user")
+    public void whenUserDoesNotExist_thenItShouldReturnResourceNotFoundException() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(this.usersService.getUserById(id))
+                .thenThrow(new ResourceNotFoundException("User with ID: " + id + " does not exist."));
+
+        this.mockMvc.perform(get("/users/{id}", id))
+                .andExpect(status().isNotFound());
     }
 
     @Test
