@@ -141,4 +141,20 @@ public class UsersControllerTests {
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
+    @Test
+    @DisplayName("Should return Internal Server Error")
+    public void shouldReturnInternalServerError() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(this.usersService.getUserById(id)).thenThrow(new RuntimeException("An unexpected error occurred."));
+
+        this.mockMvc.perform(get("/users/{id}", id))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.error").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("An unexpected error occurred."))
+                .andExpect(jsonPath("$.path").value("/users/" + id))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
 }
