@@ -51,4 +51,14 @@ public class ServicesControllerTests {
                 .andExpect(jsonPath("$[0].criticality").value(serviceDTO.criticality().toString()));
     }
 
+    @Test
+    @DisplayName("Should get empty list of all services successfully")
+    public void shouldReturnEmptyListOfServicesSuccessfully() throws Exception {
+        when(this.servicesService.listAllServices()).thenReturn(List.of());
+
+        this.mockMvc.perform(get("/services/all").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(0));
+    }
+
 }
