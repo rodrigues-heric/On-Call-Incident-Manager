@@ -1,7 +1,9 @@
 package com.rodrigues.heric.incidentmanager.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -18,6 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
+import com.rodrigues.heric.incidentmanager.dto.CreateServicesRequest;
 import com.rodrigues.heric.incidentmanager.dto.ServicesDTO;
 import com.rodrigues.heric.incidentmanager.service.ServicesService;
 
@@ -59,6 +62,32 @@ public class ServicesControllerTests {
         this.mockMvc.perform(get("/services/all").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size()").value(0));
+    }
+
+    @Test
+    @DisplayName("Should create a service successfully")
+    public void shouldCreateServiceSucessfully() throws Exception {
+        String name = "Docker";
+        String team = "DevOps";
+        CriticalityEnum criticality = CriticalityEnum.MEDIUM;
+        String jsonBody = """
+                {
+                    "name": "%s",
+                    "team": "%s",
+                    "criticality": "%s"
+                }
+                """.formatted(name, team, criticality.toString());
+        UUID id = UUID.randomUUID();
+        ServicesDTO response = new ServicesDTO(id, name, team, criticality);
+
+        when(this.servicesService.createService(any(CreateServicesRequest.class))).thenReturn(response);
+
+        this.mockMvc.perform(post("/services").contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(response.id().toString()))
+                .andExpect(jsonPath("$.name").value(response.name()))
+                .andExpect(jsonPath("$.team").value(response.team()))
+                .andExpect(jsonPath("$.criticality").value(response.criticality().toString()));
     }
 
 }
