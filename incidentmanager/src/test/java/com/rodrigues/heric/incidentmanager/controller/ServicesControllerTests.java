@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.dto.CreateServicesRequest;
 import com.rodrigues.heric.incidentmanager.dto.ServicesDTO;
+import com.rodrigues.heric.incidentmanager.exception.BusinessException;
 import com.rodrigues.heric.incidentmanager.service.ServicesService;
 
 @WebMvcTest(ServicesController.class)
@@ -88,6 +89,32 @@ public class ServicesControllerTests {
                 .andExpect(jsonPath("$.name").value(response.name()))
                 .andExpect(jsonPath("$.team").value(response.team()))
                 .andExpect(jsonPath("$.criticality").value(response.criticality().toString()));
+    }
+
+    @Test
+    @DisplayName("Should throw Business Rule Exception when creating repeated service")
+    public void shouldThrowBusinessException_whenCreatingRepeatedService() throws Exception {
+        String name = "Docker";
+        String team = "DevOps";
+        CriticalityEnum criticality = CriticalityEnum.MEDIUM;
+        String jsonBody = """
+                {
+                    "name": "%s",
+                    "team": "%s",
+                    "criticality": "%s"
+                }
+                """.formatted(name, team, criticality.toString());
+
+        when(this.servicesService.createService(any(CreateServicesRequest.class)))
+                .thenThrow(new BusinessException("Service " + name + " already in use"));
+
+        this.mockMvc.perform(post("/services").contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Business Rule Violation"))
+                .andExpect(jsonPath("$.message").value("Service " + name + " already in use"))
+                .andExpect(jsonPath("$.path").value("/services"))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
 }
