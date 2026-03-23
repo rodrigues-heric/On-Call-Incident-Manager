@@ -3,10 +3,12 @@ package com.rodrigues.heric.incidentmanager.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -116,6 +118,20 @@ public class ServicesServiceTests {
 
         verify(this.servicesRepository, times(1)).findAll();
         verify(this.servicesMapper, times(1)).toDTO(serviceEntity);
+    }
+
+    @Test
+    @DisplayName("Should return empty list of services")
+    public void shouldReturnEmptyListOfServices() {
+        when(this.servicesRepository.findAll()).thenReturn(List.of());
+
+        List<ServicesDTO> result = this.servicesService.listAllServices();
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        verify(this.servicesRepository, times(1)).findAll();
+        verifyNoInteractions(this.servicesMapper);
     }
 
 }
