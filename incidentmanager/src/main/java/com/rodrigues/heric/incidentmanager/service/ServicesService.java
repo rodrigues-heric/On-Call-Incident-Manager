@@ -1,5 +1,7 @@
 package com.rodrigues.heric.incidentmanager.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.rodrigues.heric.incidentmanager.domain.ServicesEntity;
@@ -29,6 +31,14 @@ public class ServicesService {
         ServicesEntity serviceEntity = this.servicesMapper.toEntity(request);
         ServicesEntity savedService = this.servicesRepository.save(serviceEntity);
         return this.servicesMapper.toDTO(savedService);
+    }
+
+    @Transactional
+    public List<ServicesDTO> listAllServices() {
+        return this.servicesRepository.findAll()
+                .stream()
+                .map(this.servicesMapper::toDTO)
+                .toList();
     }
 
 }

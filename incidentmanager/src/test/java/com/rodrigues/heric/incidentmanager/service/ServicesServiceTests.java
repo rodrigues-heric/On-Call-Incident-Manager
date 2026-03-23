@@ -9,6 +9,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -83,6 +85,37 @@ public class ServicesServiceTests {
         verify(this.servicesRepository).findByName(name);
         verify(this.servicesMapper, never()).toEntity(any());
         verify(this.servicesRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should get all services successfully")
+    public void shouldGetAllServicesSuccessfully() {
+        UUID id = UUID.randomUUID();
+        String name = "Database";
+        String team = "Infra";
+        CriticalityEnum criticality = CriticalityEnum.CRITICAL;
+
+        ServicesEntity serviceEntity = ServicesEntity.builder()
+                .id(id)
+                .name(name)
+                .team(team)
+                .criticality(criticality)
+                .build();
+        ServicesDTO serviceDTO = new ServicesDTO(id, name, team, criticality);
+
+        when(this.servicesRepository.findAll()).thenReturn(List.of(serviceEntity));
+        when(this.servicesMapper.toDTO(serviceEntity)).thenReturn(serviceDTO);
+
+        List<ServicesDTO> result = this.servicesService.listAllServices();
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(name, result.get(0).name());
+        assertEquals(team, result.get(0).team());
+        assertEquals(criticality, result.get(0).criticality());
+
+        verify(this.servicesRepository, times(1)).findAll();
+        verify(this.servicesMapper, times(1)).toDTO(serviceEntity);
     }
 
 }
