@@ -47,6 +47,13 @@ public class GlobalExceptionHandler {
                 request);
     }
 
+    @ExceptionHandler(InvalidStateTransitionException.class)
+    public ResponseEntity<ErrorResponseDTO> handleInvalidStateTransitionException(
+            InvalidStateTransitionException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNPROCESSABLE_CONTENT, "Invalid State Transition", exception.getMessage(),
+                request);
+    }
+
     private ResponseEntity<ErrorResponseDTO> buildResponse(
             HttpStatus status, String error, String message, HttpServletRequest request) {
 
