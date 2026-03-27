@@ -8,7 +8,9 @@ import com.rodrigues.heric.incidentmanager.domain.IncidentsEntity;
 import com.rodrigues.heric.incidentmanager.domain.ServicesEntity;
 import com.rodrigues.heric.incidentmanager.domain.UsersEntity;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
+import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
+import com.rodrigues.heric.incidentmanager.mapper.IncidentsMapper;
 import com.rodrigues.heric.incidentmanager.repository.IncidentsRepository;
 import com.rodrigues.heric.incidentmanager.repository.ServicesRepository;
 import com.rodrigues.heric.incidentmanager.repository.UsersRepository;
@@ -24,8 +26,10 @@ public class IncidentsService {
     private final ServicesRepository servicesRepository;
     private final UsersRepository usersRepository;
 
+    private final IncidentsMapper incidentsMapper;
+
     @Transactional
-    public IncidentsEntity createIncident(CreateIncidentsRequest request) {
+    public IncidentsDTO createIncident(CreateIncidentsRequest request) {
         ServicesEntity service = this.findServiceById(request.serviceId());
         UsersEntity assignee = this.findAssigneeById(request.assigneeId());
 
@@ -37,7 +41,8 @@ public class IncidentsService {
                 .service(service)
                 .assignee(assignee)
                 .build();
-        return this.incidentsRepository.save(incident);
+        IncidentsEntity savedIncident = this.incidentsRepository.save(incident);
+        return this.incidentsMapper.toDTO(savedIncident);
     }
 
     private ServicesEntity findServiceById(UUID id) {
