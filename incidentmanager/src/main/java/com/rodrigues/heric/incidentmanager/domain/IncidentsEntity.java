@@ -49,7 +49,8 @@ public class IncidentsEntity extends BaseEntity {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private IncidentStatusEnum status;
+    @Builder.Default
+    private IncidentStatusEnum status = IncidentStatusEnum.OPEN;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
