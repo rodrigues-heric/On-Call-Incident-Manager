@@ -45,11 +45,12 @@ public class IncidentsEntity extends BaseEntity {
     private String title;
 
     @Column(columnDefinition = "TEXT")
-    private String descripion;
+    private String description;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private IncidentStatusEnum status;
+    @Builder.Default
+    private IncidentStatusEnum status = IncidentStatusEnum.OPEN;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
