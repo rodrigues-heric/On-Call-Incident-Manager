@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.description;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -134,6 +135,67 @@ public class IncidentsServiceTests {
 
         verify(this.servicesRepository, times(1)).findById(serviceId);
         verify(this.incidentsRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should fetch incident by id successfully")
+    public void shouldFetchIncidentByIdSuccessfully() {
+        UUID id = UUID.randomUUID();
+        String title = "Title";
+        String description = "Description";
+        CriticalityEnum criticality = CriticalityEnum.LOW;
+
+        UUID serviceId = UUID.randomUUID();
+        ServicesEntity service = ServicesEntity.builder()
+                .id(serviceId)
+                .name("Service Test")
+                .build();
+
+        IncidentsEntity incidentsEntity = IncidentsEntity.builder()
+                .id(id)
+                .title(title)
+                .description(description)
+                .criticality(criticality)
+                .service(service)
+                .status(IncidentStatusEnum.OPEN)
+                .build();
+        IncidentsDTO expectedDTO = new IncidentsDTO(
+                id,
+                title,
+                description,
+                IncidentStatusEnum.OPEN,
+                criticality,
+                serviceId,
+                null,
+                null);
+
+        when(this.incidentsRepository.findById(id)).thenReturn(Optional.of(incidentsEntity));
+        when(this.incidentsMapper.toDTO(incidentsEntity)).thenReturn(expectedDTO);
+
+        IncidentsDTO result = this.incidentsService.getIncidentById(id);
+
+        assertNotNull(result);
+        assertEquals(expectedDTO.id(), result.id());
+        assertEquals(expectedDTO.title(), result.title());
+        assertEquals(expectedDTO.description(), result.description());
+        assertEquals(expectedDTO.status(), result.status());
+        assertEquals(expectedDTO.criticality(), result.criticality());
+        assertEquals(expectedDTO.serviceId(), result.serviceId());
+        assertEquals(expectedDTO.assigneeId(), result.assigneeId());
+        assertEquals(expectedDTO.resolverAt(), result.resolverAt());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when no incident found")
+    public void shouldThrowExceptionWhenNoIncidentFound() {
+        UUID id = UUID.randomUUID();
+
+        when(this.incidentsRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> this.incidentsService.getIncidentById(id));
+
+        verify(this.incidentsMapper, never()).toDTO(any());
     }
 
 }

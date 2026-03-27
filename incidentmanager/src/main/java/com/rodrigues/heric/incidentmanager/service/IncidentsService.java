@@ -39,6 +39,14 @@ public class IncidentsService {
         return incidentDTO;
     }
 
+    @Transactional
+    public IncidentsDTO getIncidentById(UUID id) {
+        return this.incidentsRepository.findById(id)
+                .map(this.incidentsMapper::toDTO)
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Incident with id " + id + " not found"));
+    }
+
     private ServicesEntity findServiceById(UUID id) {
         return this.servicesRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Service with id " + id.toString() + " not found"));
