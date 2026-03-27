@@ -1,11 +1,14 @@
 package com.rodrigues.heric.incidentmanager.service;
 
+import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.rodrigues.heric.incidentmanager.domain.IncidentsEntity;
 import com.rodrigues.heric.incidentmanager.domain.ServicesEntity;
+import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
@@ -13,6 +16,7 @@ import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.mapper.IncidentsMapper;
 import com.rodrigues.heric.incidentmanager.repository.IncidentsRepository;
 import com.rodrigues.heric.incidentmanager.repository.ServicesRepository;
+import com.rodrigues.heric.incidentmanager.specification.IncidentsSpecification;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +49,24 @@ public class IncidentsService {
                 .map(this.incidentsMapper::toDTO)
                 .orElseThrow(
                         () -> new ResourceNotFoundException("Incident with id " + id + " not found"));
+    }
+
+    @Transactional
+    public List<IncidentsDTO> findAllWithFilters(
+            IncidentStatusEnum status,
+            UUID serviceId,
+            CriticalityEnum criticality,
+            UUID assigneeId,
+            String title) {
+
+        Specification<IncidentsEntity> spec = IncidentsSpecification.withFilters(
+                status, serviceId, criticality, assigneeId, title);
+
+        List<IncidentsEntity> incidents = this.incidentsRepository.findAll(spec);
+
+        return incidents.stream()
+                .map(incidentsMapper::toDTO)
+                .toList();
     }
 
     private ServicesEntity findServiceById(UUID id) {
