@@ -2,6 +2,9 @@ package com.rodrigues.heric.incidentmanager.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +25,7 @@ import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
+import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.mapper.IncidentsMapper;
 import com.rodrigues.heric.incidentmanager.repository.IncidentsRepository;
 import com.rodrigues.heric.incidentmanager.repository.ServicesRepository;
@@ -111,6 +115,25 @@ public class IncidentsServiceTests {
         verify(incidentsMapper, times(1)).toEntity(request);
         verify(incidentsRepository, times(1)).save(incidentsEntity);
         verify(incidentsMapper, times(1)).toDTO(savedIncident);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when service not found")
+    public void shouldThrowExceptionWhenServiceNotFound() {
+        UUID serviceId = UUID.randomUUID();
+
+        CreateIncidentsRequest request = new CreateIncidentsRequest(
+                "Title",
+                "Description",
+                CriticalityEnum.CRITICAL, serviceId);
+
+        when(this.servicesRepository.findById(serviceId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> this.incidentsService.createIncident(request));
+
+        verify(this.servicesRepository, times(1)).findById(serviceId);
+        verify(this.incidentsRepository, never()).save(any());
     }
 
 }
