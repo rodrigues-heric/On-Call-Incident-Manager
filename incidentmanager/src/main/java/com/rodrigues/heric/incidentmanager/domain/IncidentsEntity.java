@@ -45,7 +45,7 @@ public class IncidentsEntity extends BaseEntity {
     private String title;
 
     @Column(columnDefinition = "TEXT")
-    private String descripion;
+    private String description;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
