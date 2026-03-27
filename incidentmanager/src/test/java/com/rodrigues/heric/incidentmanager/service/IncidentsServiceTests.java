@@ -3,21 +3,25 @@ package com.rodrigues.heric.incidentmanager.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 
 import com.rodrigues.heric.incidentmanager.domain.IncidentsEntity;
 import com.rodrigues.heric.incidentmanager.domain.ServicesEntity;
@@ -194,6 +198,66 @@ public class IncidentsServiceTests {
         assertThrows(ResourceNotFoundException.class,
                 () -> this.incidentsService.getIncidentById(id));
 
+        verify(this.incidentsMapper, never()).toDTO(any());
+    }
+
+    @Test
+    @DisplayName("Should find all incidents with filters successfully")
+    public void shouldFindAllIncidentsWithFiltersSuccessfully() {
+        IncidentStatusEnum status = IncidentStatusEnum.OPEN;
+        CriticalityEnum criticality = CriticalityEnum.HIGH;
+        UUID serviceId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+        String title = "Database";
+
+        IncidentsEntity entity = IncidentsEntity.builder()
+                .id(UUID.randomUUID())
+                .title("Database Error")
+                .status(status)
+                .criticality(criticality)
+                .build();
+
+        IncidentsDTO dto = new IncidentsDTO(
+                entity.getId(),
+                entity.getTitle(),
+                "Description",
+                status,
+                criticality,
+                serviceId,
+                assigneeId,
+                null);
+
+        when(this.incidentsRepository.findAll(ArgumentMatchers.<Specification<IncidentsEntity>>any()))
+                .thenReturn(List.of(entity));
+        when(this.incidentsMapper.toDTO(entity)).thenReturn(dto);
+
+        List<IncidentsDTO> result = this.incidentsService.findAllWithFilters(
+                status, serviceId, criticality, assigneeId, title);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(dto.id(), result.get(0).id());
+        assertEquals(dto.title(), result.get(0).title());
+
+        verify(this.incidentsRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<IncidentsEntity>>any());
+        verify(this.incidentsMapper, times(1)).toDTO(entity);
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no incidents match filters")
+    public void shouldReturnEmptyListWhenNoIncidentsMatchFilters() {
+        when(this.incidentsRepository.findAll(ArgumentMatchers.<Specification<IncidentsEntity>>any()))
+                .thenReturn(java.util.Collections.emptyList());
+
+        List<IncidentsDTO> result = this.incidentsService.findAllWithFilters(
+                null, null, null, null, null);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        verify(this.incidentsRepository, times(1))
+                .findAll(ArgumentMatchers.<Specification<IncidentsEntity>>any());
         verify(this.incidentsMapper, never()).toDTO(any());
     }
 
