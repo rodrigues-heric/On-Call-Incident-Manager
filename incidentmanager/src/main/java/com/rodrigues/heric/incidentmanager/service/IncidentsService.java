@@ -30,13 +30,9 @@ public class IncidentsService {
     public IncidentsDTO createIncident(CreateIncidentsRequest request) {
         ServicesEntity service = this.findServiceById(request.serviceId());
 
-        IncidentsEntity incident = IncidentsEntity.builder()
-                .title(request.title())
-                .description(request.description())
-                .status(IncidentStatusEnum.OPEN)
-                .criticality(request.criticality())
-                .service(service)
-                .build();
+        IncidentsEntity incident = this.incidentsMapper.toEntity(request);
+        incident.setService(service);
+        incident.setStatus(IncidentStatusEnum.OPEN);
 
         IncidentsEntity savedIncident = this.incidentsRepository.save(incident);
         IncidentsDTO incidentDTO = this.incidentsMapper.toDTO(savedIncident);

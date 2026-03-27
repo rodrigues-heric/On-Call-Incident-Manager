@@ -15,7 +15,7 @@ public interface IncidentsMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "assignee", ignore = true)
+    @Mapping(target = "service", ignore = true)
     @Mapping(target = "resolvedAt", ignore = true)
     IncidentsEntity toEntity(CreateIncidentsRequest request);
 
