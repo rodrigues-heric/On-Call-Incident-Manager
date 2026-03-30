@@ -11,6 +11,8 @@ import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface IncidentsMapper {
 
+    @Mapping(target = "serviceId", source = "service.id")
+    @Mapping(target = "assigneeId", source = "assignee.id")
     IncidentsDTO toDTO(IncidentsEntity incidentsEntity);
 
     @Mapping(target = "id", ignore = true)
