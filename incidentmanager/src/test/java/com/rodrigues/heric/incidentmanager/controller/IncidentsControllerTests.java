@@ -6,9 +6,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -158,4 +159,128 @@ public class IncidentsControllerTests {
                 .andExpect(jsonPath("$.path").exists());
     }
 
+    // ========== SEARCH INCIDENT ==========
+    @Test
+    @DisplayName("Should search incidents successfully with all parameters")
+    public void shouldSearchIncidentsSuccessfully() throws Exception {
+        UUID serviceId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+        String title = "Database Incident";
+        IncidentStatusEnum status = IncidentStatusEnum.OPEN;
+        CriticalityEnum criticality = CriticalityEnum.HIGH;
+
+        IncidentsDTO incident1 = new IncidentsDTO(
+                UUID.randomUUID(), title, "Description 1", status, criticality, serviceId, assigneeId, null);
+        IncidentsDTO incident2 = new IncidentsDTO(
+                UUID.randomUUID(), title, "Description 2", status, criticality, serviceId, assigneeId, null);
+
+        when(this.incidentsService.findAllWithFilters(status, serviceId, criticality, assigneeId, title))
+                .thenReturn(List.of(incident1, incident2));
+
+        this.mockMvc.perform(get("/incidents/search")
+                .param("title", title)
+                .param("status", status.toString())
+                .param("criticality", criticality.toString())
+                .param("serviceId", serviceId.toString())
+                .param("assigneeId", assigneeId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].title").value(title))
+                .andExpect(jsonPath("$[1].title").value(title));
+    }
+
+    @Test
+    @DisplayName("Should search incidents by status only")
+    public void shouldSearchIncidentsByStatusOnly() throws Exception {
+        IncidentStatusEnum status = IncidentStatusEnum.OPEN;
+        IncidentsDTO incident = new IncidentsDTO(
+                UUID.randomUUID(), "Test", "Desc", status, CriticalityEnum.LOW, UUID.randomUUID(), null, null);
+
+        when(this.incidentsService.findAllWithFilters(status, null, null, null, null))
+                .thenReturn(List.of(incident));
+
+        this.mockMvc.perform(get("/incidents/search")
+                .param("status", status.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value(status.toString()));
+    }
+
+    @Test
+    @DisplayName("Should search incidents by criticality only")
+    public void shouldSearchIncidentsByCriticalityOnly() throws Exception {
+        CriticalityEnum criticality = CriticalityEnum.CRITICAL;
+        IncidentsDTO incident = new IncidentsDTO(
+                UUID.randomUUID(), "Critical", "Desc", IncidentStatusEnum.OPEN, criticality, UUID.randomUUID(), null,
+                null);
+
+        when(this.incidentsService.findAllWithFilters(null, null, criticality, null, null))
+                .thenReturn(List.of(incident));
+
+        this.mockMvc.perform(get("/incidents/search")
+                .param("criticality", criticality.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].criticality").value(criticality.toString()));
+    }
+
+    @Test
+    @DisplayName("Should search incidents by serviceId only")
+    public void shouldSearchIncidentsByServiceIdOnly() throws Exception {
+        UUID serviceId = UUID.randomUUID();
+        IncidentsDTO incident = new IncidentsDTO(
+                UUID.randomUUID(), "Test", "Desc", IncidentStatusEnum.OPEN, CriticalityEnum.MEDIUM, serviceId, null,
+                null);
+
+        when(this.incidentsService.findAllWithFilters(null, serviceId, null, null, null))
+                .thenReturn(List.of(incident));
+
+        this.mockMvc.perform(get("/incidents/search")
+                .param("serviceId", serviceId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].serviceId").value(serviceId.toString()));
+    }
+
+    @Test
+    @DisplayName("Should search incidents by assigneeId only")
+    public void shouldSearchIncidentsByAssigneeIdOnly() throws Exception {
+        UUID assigneeId = UUID.randomUUID();
+        IncidentsDTO incident = new IncidentsDTO(
+                UUID.randomUUID(), "Test", "Desc", IncidentStatusEnum.OPEN, CriticalityEnum.MEDIUM, UUID.randomUUID(),
+                assigneeId, null);
+
+        when(this.incidentsService.findAllWithFilters(null, null, null, assigneeId, null))
+                .thenReturn(List.of(incident));
+
+        this.mockMvc.perform(get("/incidents/search")
+                .param("assigneeId", assigneeId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].assigneeId").value(assigneeId.toString()));
+    }
+
+    @Test
+    @DisplayName("Should search incidents by title only")
+    public void shouldSearchIncidentsByTitleOnly() throws Exception {
+        String title = "Server Down";
+        IncidentsDTO incident = new IncidentsDTO(
+                UUID.randomUUID(), title, "Desc", IncidentStatusEnum.OPEN, CriticalityEnum.CRITICAL, UUID.randomUUID(),
+                null, null);
+
+        when(this.incidentsService.findAllWithFilters(null, null, null, null, title))
+                .thenReturn(List.of(incident));
+
+        this.mockMvc.perform(get("/incidents/search")
+                .param("title", title))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value(title));
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no incidents match search criteria")
+    public void shouldReturnEmptyListWhenNoIncidentsMatch() throws Exception {
+        when(this.incidentsService.findAllWithFilters(null, null, null, null, null))
+                .thenReturn(List.of());
+
+        this.mockMvc.perform(get("/incidents/search"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
 }
