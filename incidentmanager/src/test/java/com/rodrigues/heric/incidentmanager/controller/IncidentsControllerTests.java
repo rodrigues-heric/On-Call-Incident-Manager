@@ -1,7 +1,9 @@
 package com.rodrigues.heric.incidentmanager.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -14,12 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
+import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.service.IncidentsService;
@@ -78,6 +82,50 @@ public class IncidentsControllerTests {
                 .andExpect(jsonPath("$.message").value("Incident with id " + id + " not found"))
                 .andExpect(jsonPath("$.path").exists());
 
+    }
+
+    // ========== CREATE INCIDENT ==========
+    @Test
+    @DisplayName("Should create incident successfully")
+    public void shouldCreateIncidentSuccessfully() throws Exception {
+        String title = "Incident database";
+        String description = "Incident description";
+        CriticalityEnum criticality = CriticalityEnum.CRITICAL;
+        UUID id = UUID.randomUUID();
+
+        String jsonBody = """
+                {
+                    "title": "%s",
+                    "description": "%s",
+                    "criticality": "%s",
+                    "serviceId": "%s"
+                }
+                """.formatted(title, description, criticality.toString(), id.toString());
+
+        UUID createdId = UUID.randomUUID();
+        IncidentStatusEnum status = IncidentStatusEnum.OPEN;
+        IncidentsDTO expectedDTO = new IncidentsDTO(
+                createdId,
+                title,
+                description,
+                status,
+                criticality,
+                id,
+                null,
+                null);
+
+        when(this.incidentsService.createIncident(any(CreateIncidentsRequest.class))).thenReturn(expectedDTO);
+
+        this.mockMvc.perform(post("/incidents").contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(expectedDTO.id().toString()))
+                .andExpect(jsonPath("$.title").value(expectedDTO.title()))
+                .andExpect(jsonPath("$.description").value(expectedDTO.description()))
+                .andExpect(jsonPath("$.status").value(expectedDTO.status().toString()))
+                .andExpect(jsonPath("$.criticality").value(expectedDTO.criticality().toString()))
+                .andExpect(jsonPath("$.serviceId").value(expectedDTO.serviceId().toString()))
+                .andExpect(jsonPath("$.assigneeId").value(nullValue()))
+                .andExpect(jsonPath("$.resolvedAt").value(nullValue()));
     }
 
 }
