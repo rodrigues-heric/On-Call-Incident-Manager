@@ -128,4 +128,34 @@ public class IncidentsControllerTests {
                 .andExpect(jsonPath("$.resolvedAt").value(nullValue()));
     }
 
+    @Test
+    @DisplayName("Should throw Resource Not Found creating incident with non existing service")
+    public void shouldThrowResourceNotFound_whenCreatingIncidentWithNonExistingService() throws Exception {
+        String title = "Incident database";
+        String description = "Incident description";
+        CriticalityEnum criticality = CriticalityEnum.CRITICAL;
+        UUID id = UUID.randomUUID();
+
+        String jsonBody = """
+                {
+                    "title": "%s",
+                    "description": "%s",
+                    "criticality": "%s",
+                    "serviceId": "%s"
+                }
+                """.formatted(title, description, criticality.toString(), id.toString());
+
+        String serviceId = UUID.randomUUID().toString();
+        when(this.incidentsService.createIncident(any(CreateIncidentsRequest.class))).thenThrow(
+                new ResourceNotFoundException("Incident with id " + serviceId + " not found"));
+
+        this.mockMvc.perform(post("/incidents").contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
+                .andExpect(jsonPath("$.error").value("Resource Not Found"))
+                .andExpect(jsonPath("$.message").value("Incident with id " + serviceId + " not found"))
+                .andExpect(jsonPath("$.path").exists());
+    }
+
 }
