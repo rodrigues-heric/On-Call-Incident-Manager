@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
+import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.service.IncidentsService;
 
 @WebMvcTest(IncidentsController.class)
@@ -58,6 +60,24 @@ public class IncidentsControllerTests {
                 .andExpect(jsonPath("$.serviceId").value(result.serviceId().toString()))
                 .andExpect(jsonPath("$.assigneeId").value(nullValue()))
                 .andExpect(jsonPath("$.resolvedAt").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("Should throw Resource Not Found exception when getting incident")
+    public void shouldThrowResourceNotFound_whenIncidentDoesNotExist() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(this.incidentsService.getIncidentById(id))
+                .thenThrow(new ResourceNotFoundException("Incident with id " + id + " not found"));
+
+        this.mockMvc.perform(get("/incidents/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.value()))
+                .andExpect(jsonPath("$.error").value("Resource Not Found"))
+                .andExpect(jsonPath("$.message").value("Incident with id " + id + " not found"))
+                .andExpect(jsonPath("$.path").exists());
+
     }
 
 }
