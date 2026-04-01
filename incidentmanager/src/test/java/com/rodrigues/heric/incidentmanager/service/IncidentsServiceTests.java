@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -30,8 +32,10 @@ import com.rodrigues.heric.incidentmanager.domain.IncidentsEntity;
 import com.rodrigues.heric.incidentmanager.domain.ServicesEntity;
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
+import com.rodrigues.heric.incidentmanager.domain.state.IncidentStateMachine;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
+import com.rodrigues.heric.incidentmanager.exception.InvalidStateTransitionException;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.mapper.IncidentsMapper;
 import com.rodrigues.heric.incidentmanager.repository.IncidentsRepository;
@@ -49,6 +53,8 @@ public class IncidentsServiceTests {
 	UsersRepository usersRepository;
 	@Mock
 	IncidentsMapper incidentsMapper;
+	@Mock
+	IncidentStateMachine stateMachine;
 
 	@InjectMocks
 	IncidentsService incidentsService;
@@ -324,6 +330,65 @@ public class IncidentsServiceTests {
 		ReflectionTestUtils.invokeMethod(incidentsService, "setResolvedAt", entity, status);
 
 		assertNull(entity.getResolvedAt(), "ResolvedAt should remain null for non-resolved status");
+	}
+
+	@Test
+	@DisplayName("Should successfully update incident status and return DTO")
+	void updateIncidentStatus_Success() {
+		UUID id = UUID.randomUUID();
+		UUID serviceId = UUID.randomUUID();
+		IncidentStatusEnum newStatus = IncidentStatusEnum.ACKNOWLEDGED;
+
+		IncidentsEntity existingEntity = new IncidentsEntity();
+		existingEntity.setId(id);
+		existingEntity.setStatus(IncidentStatusEnum.OPEN);
+
+		IncidentsDTO expectedDto = new IncidentsDTO(
+				id,
+				"Database Connection Failure",
+				"High latency in production",
+				newStatus,
+				CriticalityEnum.HIGH,
+				serviceId,
+				null,
+				null);
+
+		when(incidentsRepository.findById(id)).thenReturn(Optional.of(existingEntity));
+		when(incidentsRepository.save(any(IncidentsEntity.class))).thenReturn(existingEntity);
+		when(incidentsMapper.toDTO(any(IncidentsEntity.class))).thenReturn(expectedDto);
+
+		IncidentsDTO result = incidentsService.updateIncidentStatus(id, newStatus);
+
+		assertNotNull(result);
+		assertEquals(newStatus, result.status());
+		assertEquals(id, result.id());
+
+		verify(stateMachine).validateTransition(IncidentStatusEnum.OPEN, newStatus);
+		verify(incidentsRepository).save(existingEntity);
+		verify(incidentsMapper).toDTO(existingEntity);
+	}
+
+	@Test
+	@DisplayName("Should throw exception and not save when FSM validation fails")
+	void updateIncidentStatus_InvalidTransition_ThrowsException() {
+		UUID id = UUID.randomUUID();
+		IncidentStatusEnum currentStatus = IncidentStatusEnum.OPEN;
+		IncidentStatusEnum invalidNextStatus = IncidentStatusEnum.RESOLVED;
+
+		IncidentsEntity entity = new IncidentsEntity();
+		entity.setStatus(currentStatus);
+
+		when(incidentsRepository.findById(id)).thenReturn(Optional.of(entity));
+
+		doThrow(new InvalidStateTransitionException("Invalid transition"))
+				.when(stateMachine).validateTransition(currentStatus, invalidNextStatus);
+
+		assertThrows(InvalidStateTransitionException.class, () -> {
+			incidentsService.updateIncidentStatus(id, invalidNextStatus);
+		});
+
+		verify(incidentsRepository, never()).save(any());
+		verifyNoInteractions(incidentsMapper);
 	}
 
 }
