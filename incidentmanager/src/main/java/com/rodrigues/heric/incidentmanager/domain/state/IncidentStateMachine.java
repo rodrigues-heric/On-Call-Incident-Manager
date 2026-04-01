@@ -22,6 +22,7 @@ public class IncidentStateMachine {
         transitionsMap.put(IncidentStatusEnum.INVESTIGATING, Set.of(IncidentStatusEnum.MITIGATING));
         transitionsMap.put(IncidentStatusEnum.MITIGATING, Set.of(IncidentStatusEnum.RESOLVED));
         transitionsMap.put(IncidentStatusEnum.ESCALATED, Set.of(IncidentStatusEnum.ACKNOWLEDGED));
+        transitionsMap.put(IncidentStatusEnum.RESOLVED, Set.of());
     }
 
     public void validateTransition(IncidentStatusEnum currentStatus, IncidentStatusEnum nextStatus) {
