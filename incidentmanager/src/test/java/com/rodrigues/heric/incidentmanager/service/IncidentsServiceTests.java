@@ -2,6 +2,7 @@ package com.rodrigues.heric.incidentmanager.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -297,6 +299,31 @@ public class IncidentsServiceTests {
 
 		assertEquals(expectedMessage, exception.getMessage());
 		verify(incidentsRepository, times(1)).findById(incidentId);
+	}
+
+	@Test
+	@DisplayName("Should set resolvedAt when status is RESOLVED")
+	void setResolvedAt_WhenStatusIsResolved_SetsDate() {
+		IncidentsEntity entity = new IncidentsEntity();
+		entity.setResolvedAt(null);
+		IncidentStatusEnum status = IncidentStatusEnum.RESOLVED;
+
+		ReflectionTestUtils.invokeMethod(incidentsService, "setResolvedAt", entity, status);
+
+		assertNotNull(entity.getResolvedAt());
+		assertTrue(entity.getResolvedAt().isBefore(LocalDateTime.now().plusSeconds(1)));
+	}
+
+	@Test
+	@DisplayName("Should not set resolvedAt when status is not RESOLVED")
+	void setResolvedAt_WhenStatusIsNotResolved_DoesNothing() {
+		IncidentsEntity entity = new IncidentsEntity();
+		entity.setResolvedAt(null);
+		IncidentStatusEnum status = IncidentStatusEnum.ACKNOWLEDGED;
+
+		ReflectionTestUtils.invokeMethod(incidentsService, "setResolvedAt", entity, status);
+
+		assertNull(entity.getResolvedAt(), "ResolvedAt should remain null for non-resolved status");
 	}
 
 }
