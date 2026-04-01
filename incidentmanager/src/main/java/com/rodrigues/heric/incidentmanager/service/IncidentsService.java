@@ -1,5 +1,6 @@
 package com.rodrigues.heric.incidentmanager.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ import com.rodrigues.heric.incidentmanager.domain.IncidentsEntity;
 import com.rodrigues.heric.incidentmanager.domain.ServicesEntity;
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
+import com.rodrigues.heric.incidentmanager.domain.state.IncidentStateMachine;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
@@ -29,6 +31,8 @@ public class IncidentsService {
     private final ServicesRepository servicesRepository;
 
     private final IncidentsMapper incidentsMapper;
+
+    private final IncidentStateMachine stateMachine;
 
     @Transactional
     public IncidentsDTO createIncident(CreateIncidentsRequest request) {
@@ -67,6 +71,29 @@ public class IncidentsService {
         return incidents.stream()
                 .map(incidentsMapper::toDTO)
                 .toList();
+    }
+
+    @Transactional
+    public IncidentsDTO updateIncidentStatus(UUID id, IncidentStatusEnum status) {
+        IncidentsEntity incidentEntity = this.getIncidentsEntity(id);
+
+        this.stateMachine.validateTransition(incidentEntity.getStatus(), status);
+        incidentEntity.setStatus(status);
+        this.setResolvedAt(incidentEntity, status);
+
+        IncidentsEntity savedEntity = this.incidentsRepository.save(incidentEntity);
+        IncidentsDTO incidentDTO = this.incidentsMapper.toDTO(savedEntity);
+        return incidentDTO;
+    }
+
+    private void setResolvedAt(IncidentsEntity entity, IncidentStatusEnum status) {
+        if (status == IncidentStatusEnum.RESOLVED)
+            entity.setResolvedAt(LocalDateTime.now());
+    }
+
+    private IncidentsEntity getIncidentsEntity(UUID id) {
+        return this.incidentsRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("Incident with id " + id + " not found"));
     }
 
     private ServicesEntity findServiceById(UUID id) {
