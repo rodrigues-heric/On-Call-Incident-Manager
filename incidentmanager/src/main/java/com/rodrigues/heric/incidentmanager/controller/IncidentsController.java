@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +18,7 @@ import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
+import com.rodrigues.heric.incidentmanager.dto.PatchIncidentRequest;
 import com.rodrigues.heric.incidentmanager.service.IncidentsService;
 
 import jakarta.validation.Valid;
@@ -51,6 +53,13 @@ public class IncidentsController {
     public ResponseEntity<IncidentsDTO> postIncident(@RequestBody @Valid CreateIncidentsRequest request) {
         IncidentsDTO incidentDTO = this.incidentsService.createIncident(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(incidentDTO);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<IncidentsDTO> patchIncidentStatus(@PathVariable UUID id,
+            @RequestBody @Valid PatchIncidentRequest request) {
+        IncidentsDTO incidentDTO = this.incidentsService.updateIncidentStatus(id, request.status());
+        return ResponseEntity.ok(incidentDTO);
     }
 
 }
