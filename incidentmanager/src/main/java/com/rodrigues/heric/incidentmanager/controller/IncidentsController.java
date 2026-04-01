@@ -18,6 +18,7 @@ import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
+import com.rodrigues.heric.incidentmanager.dto.PatchIncidentRequest;
 import com.rodrigues.heric.incidentmanager.service.IncidentsService;
 
 import jakarta.validation.Valid;
@@ -56,8 +57,8 @@ public class IncidentsController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<IncidentsDTO> patchIncidentStatus(@PathVariable UUID id,
-            @RequestBody @Valid IncidentStatusEnum status) {
-        IncidentsDTO incidentDTO = this.incidentsService.updateIncidentStatus(id, status);
+            @RequestBody @Valid PatchIncidentRequest request) {
+        IncidentsDTO incidentDTO = this.incidentsService.updateIncidentStatus(id, request.status());
         return ResponseEntity.ok(incidentDTO);
     }
 

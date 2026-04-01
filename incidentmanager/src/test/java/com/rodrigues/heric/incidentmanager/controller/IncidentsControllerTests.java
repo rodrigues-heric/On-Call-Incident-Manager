@@ -31,6 +31,7 @@ import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.exception.InvalidStateTransitionException;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.service.IncidentsService;
+import com.rodrigues.heric.incidentmanager.dto.PatchIncidentRequest;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -305,6 +306,8 @@ public class IncidentsControllerTests {
 		UUID id = UUID.randomUUID();
 		IncidentStatusEnum newStatus = IncidentStatusEnum.ACKNOWLEDGED;
 
+		PatchIncidentRequest request = new PatchIncidentRequest(newStatus);
+
 		IncidentsDTO responseDto = new IncidentsDTO(
 				id, "Title", "Desc", newStatus, CriticalityEnum.HIGH,
 				UUID.randomUUID(), null, null);
@@ -314,7 +317,7 @@ public class IncidentsControllerTests {
 
 		mockMvc.perform(patch("/incidents/{id}/status", id)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(newStatus)))
+				.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(id.toString()))
 				.andExpect(jsonPath("$.status").value(newStatus.toString()));
@@ -325,13 +328,14 @@ public class IncidentsControllerTests {
 	void patchIncidentStatus_InvalidTransition() throws Exception {
 		UUID id = UUID.randomUUID();
 		IncidentStatusEnum invalidStatus = IncidentStatusEnum.RESOLVED;
+		PatchIncidentRequest request = new PatchIncidentRequest(invalidStatus);
 
 		when(incidentsService.updateIncidentStatus(eq(id), any(IncidentStatusEnum.class)))
 				.thenThrow(new InvalidStateTransitionException("Invalid transition from OPEN to RESOLVED"));
 
 		mockMvc.perform(patch("/incidents/{id}/status", id)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(invalidStatus)))
+				.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isUnprocessableContent())
 				.andExpect(jsonPath("$.error").value("Invalid State Transition"))
 				.andExpect(jsonPath("$.status").value(422));
