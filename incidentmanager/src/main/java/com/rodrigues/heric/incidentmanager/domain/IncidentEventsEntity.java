@@ -1,6 +1,6 @@
 package com.rodrigues.heric.incidentmanager.domain;
 
-import com.rodrigues.heric.incidentmanager.domain.enums.IncidentEventEnum;
+import com.rodrigues.heric.incidentmanager.domain.enums.IncidentEventsEnum;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,7 +26,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IncidentEventEntity extends BaseEntity {
+public class IncidentEventsEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,7 +38,7 @@ public class IncidentEventEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private IncidentEventEnum type;
+    private IncidentEventsEnum type;
 
     @Column(nullable = false)
     private String actor;

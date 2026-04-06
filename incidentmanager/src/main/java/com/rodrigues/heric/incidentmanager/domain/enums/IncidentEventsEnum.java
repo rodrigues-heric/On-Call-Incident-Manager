@@ -1,6 +1,6 @@
 package com.rodrigues.heric.incidentmanager.domain.enums;
 
-public enum IncidentEventEnum {
+public enum IncidentEventsEnum {
     NOTE,
     STATE_CHANGE,
     ESCALATION,

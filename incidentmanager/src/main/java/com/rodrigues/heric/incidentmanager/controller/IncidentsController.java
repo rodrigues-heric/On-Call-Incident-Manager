@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
+import com.rodrigues.heric.incidentmanager.dto.CreateIncidentEventRequest;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.dto.PatchIncidentRequest;
@@ -53,6 +54,14 @@ public class IncidentsController {
     public ResponseEntity<IncidentsDTO> postIncident(@RequestBody @Valid CreateIncidentsRequest request) {
         IncidentsDTO incidentDTO = this.incidentsService.createIncident(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(incidentDTO);
+    }
+
+    @PostMapping("/{id}/events")
+    public ResponseEntity<Void> addNote(
+            @PathVariable UUID id,
+            @RequestBody @Valid CreateIncidentEventRequest request) {
+        this.incidentsService.addManualNote(id, request);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/status")

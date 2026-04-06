@@ -7,15 +7,19 @@ import java.util.UUID;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.rodrigues.heric.incidentmanager.domain.IncidentEventsEntity;
 import com.rodrigues.heric.incidentmanager.domain.IncidentsEntity;
 import com.rodrigues.heric.incidentmanager.domain.ServicesEntity;
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
+import com.rodrigues.heric.incidentmanager.domain.enums.IncidentEventsEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
 import com.rodrigues.heric.incidentmanager.domain.state.IncidentStateMachine;
+import com.rodrigues.heric.incidentmanager.dto.CreateIncidentEventRequest;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.mapper.IncidentsMapper;
+import com.rodrigues.heric.incidentmanager.repository.IncidentEventsRepository;
 import com.rodrigues.heric.incidentmanager.repository.IncidentsRepository;
 import com.rodrigues.heric.incidentmanager.repository.ServicesRepository;
 import com.rodrigues.heric.incidentmanager.specification.IncidentsSpecification;
@@ -29,6 +33,7 @@ public class IncidentsService {
 
     private final IncidentsRepository incidentsRepository;
     private final ServicesRepository servicesRepository;
+    private final IncidentEventsRepository incidentEventsRepository;
 
     private final IncidentsMapper incidentsMapper;
 
@@ -83,7 +88,18 @@ public class IncidentsService {
 
         IncidentsEntity savedEntity = this.incidentsRepository.save(incidentEntity);
         IncidentsDTO incidentDTO = this.incidentsMapper.toDTO(savedEntity);
+
+        IncidentStatusEnum oldStatus = incidentEntity.getStatus();
+        this.createEvent(savedEntity, IncidentEventsEnum.STATE_CHANGE, "SYSTEM",
+                "Status changed from " + oldStatus + " to " + status);
+
         return incidentDTO;
+    }
+
+    @Transactional
+    public void addManualNote(UUID id, CreateIncidentEventRequest request) {
+        IncidentsEntity incident = this.getIncidentsEntity(id);
+        this.createEvent(incident, IncidentEventsEnum.NOTE, request.actor(), request.description());
     }
 
     private void setResolvedAt(IncidentsEntity entity, IncidentStatusEnum status) {
@@ -99,6 +115,17 @@ public class IncidentsService {
     private ServicesEntity findServiceById(UUID id) {
         return this.servicesRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Service with id " + id.toString() + " not found"));
+    }
+
+    private void createEvent(IncidentsEntity incidentEntity, IncidentEventsEnum incidentType, String actor,
+            String description) {
+        IncidentEventsEntity event = IncidentEventsEntity.builder()
+                .incident(incidentEntity)
+                .type(incidentType)
+                .actor(actor)
+                .description(description)
+                .build();
+        this.incidentEventsRepository.save(event);
     }
 
 }

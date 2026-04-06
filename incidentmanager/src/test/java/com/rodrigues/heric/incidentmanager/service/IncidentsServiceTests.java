@@ -38,6 +38,7 @@ import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.exception.InvalidStateTransitionException;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
 import com.rodrigues.heric.incidentmanager.mapper.IncidentsMapper;
+import com.rodrigues.heric.incidentmanager.repository.IncidentEventsRepository;
 import com.rodrigues.heric.incidentmanager.repository.IncidentsRepository;
 import com.rodrigues.heric.incidentmanager.repository.ServicesRepository;
 import com.rodrigues.heric.incidentmanager.repository.UsersRepository;
@@ -47,6 +48,8 @@ public class IncidentsServiceTests {
 
 	@Mock
 	IncidentsRepository incidentsRepository;
+	@Mock
+	IncidentEventsRepository incidentEventsRepository;
 	@Mock
 	ServicesRepository servicesRepository;
 	@Mock
