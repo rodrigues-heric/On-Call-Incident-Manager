@@ -2,6 +2,10 @@ package com.rodrigues.heric.incidentmanager.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -26,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
+import com.rodrigues.heric.incidentmanager.dto.CreateIncidentEventRequest;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.exception.InvalidStateTransitionException;
@@ -340,4 +345,39 @@ public class IncidentsControllerTests {
 				.andExpect(jsonPath("$.error").value("Invalid State Transition"))
 				.andExpect(jsonPath("$.status").value(422));
 	}
+
+	// ========== ADD LOG ==========
+	@Test
+	@DisplayName("Should return 204 No Content when note is added successfully")
+	void addNote_Success() throws Exception {
+		UUID id = UUID.randomUUID();
+		CreateIncidentEventRequest request = new CreateIncidentEventRequest("Foo Bar", "Analysing logs");
+
+		doNothing().when(incidentsService).addManualNote(eq(id), any(CreateIncidentEventRequest.class));
+
+		mockMvc.perform(post("/incidents/{id}/events", id)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isNoContent());
+
+		verify(incidentsService, times(1)).addManualNote(eq(id), any(CreateIncidentEventRequest.class));
+	}
+
+	@Test
+	@DisplayName("Should return 404 Not Found when incident does not exist")
+	void addNote_IncidentNotFound() throws Exception {
+		UUID id = UUID.randomUUID();
+		CreateIncidentEventRequest request = new CreateIncidentEventRequest("System", "Attempt to add note");
+
+		doThrow(new ResourceNotFoundException("Incident not found"))
+				.when(incidentsService).addManualNote(eq(id), any(CreateIncidentEventRequest.class));
+
+		mockMvc.perform(post("/incidents/{id}/events", id)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.error").value("Resource Not Found"));
+	}
+
 }
