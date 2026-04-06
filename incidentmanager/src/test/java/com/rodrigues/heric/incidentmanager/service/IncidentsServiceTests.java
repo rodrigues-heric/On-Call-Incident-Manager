@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -31,8 +32,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.rodrigues.heric.incidentmanager.domain.IncidentsEntity;
 import com.rodrigues.heric.incidentmanager.domain.ServicesEntity;
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
+import com.rodrigues.heric.incidentmanager.domain.enums.IncidentEventsEnum;
 import com.rodrigues.heric.incidentmanager.domain.enums.IncidentStatusEnum;
 import com.rodrigues.heric.incidentmanager.domain.state.IncidentStateMachine;
+import com.rodrigues.heric.incidentmanager.dto.CreateIncidentEventRequest;
 import com.rodrigues.heric.incidentmanager.dto.CreateIncidentsRequest;
 import com.rodrigues.heric.incidentmanager.dto.IncidentsDTO;
 import com.rodrigues.heric.incidentmanager.exception.InvalidStateTransitionException;
@@ -392,6 +395,42 @@ public class IncidentsServiceTests {
 
 		verify(incidentsRepository, never()).save(any());
 		verifyNoInteractions(incidentsMapper);
+	}
+
+	// ========== ADD LOG ==========
+	@Test
+	@DisplayName("Should successfully add a manual note to an existing incident")
+	void addManualNote_Success() {
+		UUID incidentId = UUID.randomUUID();
+		CreateIncidentEventRequest request = new CreateIncidentEventRequest("Engineer X",
+				"Investigating high CPU usage");
+
+		IncidentsEntity incident = new IncidentsEntity();
+		incident.setId(incidentId);
+
+		when(incidentsRepository.findById(incidentId)).thenReturn(Optional.of(incident));
+
+		incidentsService.addManualNote(incidentId, request);
+
+		verify(incidentEventsRepository).save(argThat(event -> event.getIncident().getId().equals(incidentId) &&
+				event.getType().equals(IncidentEventsEnum.NOTE) &&
+				event.getActor().equals(request.actor()) &&
+				event.getDescription().equals(request.description())));
+	}
+
+	@Test
+	@DisplayName("Should throw ResourceNotFoundException when incident does not exist")
+	void addManualNote_IncidentNotFound_ThrowsException() {
+		UUID id = UUID.randomUUID();
+		CreateIncidentEventRequest request = new CreateIncidentEventRequest("Actor", "Desc");
+
+		when(incidentsRepository.findById(id)).thenReturn(Optional.empty());
+
+		assertThrows(ResourceNotFoundException.class, () -> {
+			incidentsService.addManualNote(id, request);
+		});
+
+		verify(incidentEventsRepository, never()).save(any());
 	}
 
 }
