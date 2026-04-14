@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 
 import com.rodrigues.heric.incidentmanager.domain.OnCallScheduleEntity;
 import com.rodrigues.heric.incidentmanager.domain.UsersEntity;
+import com.rodrigues.heric.incidentmanager.dto.OnCallEngineerDTO;
 import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
+import com.rodrigues.heric.incidentmanager.mapper.OnCallScheduleMapper;
 import com.rodrigues.heric.incidentmanager.repository.OnCallScheduleRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -17,15 +19,16 @@ import lombok.RequiredArgsConstructor;
 public class OnCallScheduleService {
 
     private final OnCallScheduleRepository onCallScheduelRepository;
+    private final OnCallScheduleMapper onCallScheduleMapper;
 
-    public UsersEntity getCurrentOnCallEngineer(UUID serviceId) {
+    public OnCallEngineerDTO getCurrentOnCallEngineer(UUID serviceId) {
         LocalDateTime now = LocalDateTime.now();
-
-        return onCallScheduelRepository
+        UsersEntity engineer = onCallScheduelRepository
                 .findFirstByServiecIdAndStartTimeBeforeAndEndTimeAfter(serviceId, now, now)
                 .map(OnCallScheduleEntity::getEngineer)
                 .orElseThrow(
                         () -> new ResourceNotFoundException("No engineer on call for this service at the moment"));
+        return this.onCallScheduleMapper.toDTO(engineer);
     }
 
 }
