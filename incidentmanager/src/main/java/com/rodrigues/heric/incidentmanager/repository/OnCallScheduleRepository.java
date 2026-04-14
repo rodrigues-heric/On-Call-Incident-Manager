@@ -12,7 +12,7 @@ import com.rodrigues.heric.incidentmanager.domain.OnCallScheduleEntity;
 @Repository
 public interface OnCallScheduleRepository extends JpaRepository<OnCallScheduleEntity, Long> {
 
-    Optional<OnCallScheduleEntity> findFirstByServiecIdAndStartTimeBeforeAndEndTimeAfter(
+    Optional<OnCallScheduleEntity> findFirstByServiceIdAndStartTimeBeforeAndEndTimeAfter(
             UUID serviceId,
             LocalDateTime startTime,
             LocalDateTime endTime);

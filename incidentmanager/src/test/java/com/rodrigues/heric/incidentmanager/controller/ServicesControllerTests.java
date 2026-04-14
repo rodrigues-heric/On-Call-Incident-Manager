@@ -23,6 +23,7 @@ import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.dto.CreateServicesRequest;
 import com.rodrigues.heric.incidentmanager.dto.ServicesDTO;
 import com.rodrigues.heric.incidentmanager.exception.BusinessException;
+import com.rodrigues.heric.incidentmanager.service.OnCallScheduleService;
 import com.rodrigues.heric.incidentmanager.service.ServicesService;
 
 @WebMvcTest(ServicesController.class)
@@ -34,6 +35,8 @@ public class ServicesControllerTests {
 
     @MockitoBean
     private ServicesService servicesService;
+    @MockitoBean
+    private OnCallScheduleService onCallScheduleService;
 
     @Test
     @DisplayName("Should get all services successfully")

@@ -24,7 +24,7 @@ public class OnCallScheduleService {
     public OnCallEngineerDTO getCurrentOnCallEngineer(UUID serviceId) {
         LocalDateTime now = LocalDateTime.now();
         UsersEntity engineer = onCallScheduelRepository
-                .findFirstByServiecIdAndStartTimeBeforeAndEndTimeAfter(serviceId, now, now)
+                .findFirstByServiceIdAndStartTimeBeforeAndEndTimeAfter(serviceId, now, now)
                 .map(OnCallScheduleEntity::getEngineer)
                 .orElseThrow(
                         () -> new ResourceNotFoundException("No engineer on call for this service at the moment"));
