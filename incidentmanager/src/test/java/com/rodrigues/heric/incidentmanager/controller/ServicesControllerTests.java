@@ -21,8 +21,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.rodrigues.heric.incidentmanager.domain.enums.CriticalityEnum;
 import com.rodrigues.heric.incidentmanager.dto.CreateServicesRequest;
+import com.rodrigues.heric.incidentmanager.dto.OnCallEngineerDTO;
 import com.rodrigues.heric.incidentmanager.dto.ServicesDTO;
 import com.rodrigues.heric.incidentmanager.exception.BusinessException;
+import com.rodrigues.heric.incidentmanager.exception.ResourceNotFoundException;
+import com.rodrigues.heric.incidentmanager.service.OnCallScheduleService;
 import com.rodrigues.heric.incidentmanager.service.ServicesService;
 
 @WebMvcTest(ServicesController.class)
@@ -34,6 +37,8 @@ public class ServicesControllerTests {
 
     @MockitoBean
     private ServicesService servicesService;
+    @MockitoBean
+    private OnCallScheduleService onCallScheduleService;
 
     @Test
     @DisplayName("Should get all services successfully")
@@ -115,6 +120,42 @@ public class ServicesControllerTests {
                 .andExpect(jsonPath("$.message").value("Service " + name + " already in use"))
                 .andExpect(jsonPath("$.path").value("/services"))
                 .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    @DisplayName("Should return 200 OK and the engineer data")
+    void getCurrentOnCall_Success() throws Exception {
+        UUID serviceId = UUID.randomUUID();
+        OnCallEngineerDTO expectedResponse = new OnCallEngineerDTO(
+                UUID.randomUUID(),
+                "Heric Rodrigues",
+                "heric@example.com",
+                "5511999999999");
+
+        when(onCallScheduleService.getCurrentOnCallEngineer(serviceId))
+                .thenReturn(expectedResponse);
+
+        mockMvc.perform(get("/services/{id}/oncall", serviceId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Heric Rodrigues"))
+                .andExpect(jsonPath("$.email").value("heric@example.com"))
+                .andExpect(jsonPath("$.phone").value("5511999999999"));
+    }
+
+    @Test
+    @DisplayName("Should return 404 Not Found when service launches ResourceNotFoundException")
+    void getCurrentOnCall_NotFound() throws Exception {
+        UUID serviceId = UUID.randomUUID();
+
+        when(onCallScheduleService.getCurrentOnCallEngineer(serviceId))
+                .thenThrow(new ResourceNotFoundException("No engineer on call for this service at the moment"));
+
+        mockMvc.perform(get("/services/{id}/oncall", serviceId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Resource Not Found"));
     }
 
 }
